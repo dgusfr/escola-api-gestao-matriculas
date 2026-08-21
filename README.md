@@ -257,5 +257,3 @@ python manage.py migrate
 
 - [Django REST Framework](https://www.django-rest-framework.org/)
 - [Documentação do Django](https://docs.djangoproject.com/)
-- [Quadro do projeto no Trello](https://trello.com/b/WPxbvI0c/django-rest-framework-escola-curso-01)
-
