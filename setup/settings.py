@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 import os
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -25,18 +26,17 @@ load_dotenv(BASE_DIR / ".env")
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-jy1_&lrsoumg%gv02(oxcn*q(p%*!yt8-lj8xg^x(kee$fazuv"
 SECRET_KEY = os.getenv(
     "SECRET_KEY", "django-insecure-jy1_&lrsoumg%gv02(oxcn*q(p%*!yt8-lj8xg^x(kee$fazuv"
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 DEBUG = os.getenv("DEBUG", "True").lower() in ("true", "1", "t")
 
-ALLOWED_HOSTS = []
 ALLOWED_HOSTS = [
-    host.strip() for host in os.getenv("ALLOWED_HOSTS", "127.0.0.1,localhost").split(",") if host.strip()
+    host.strip()
+    for host in os.getenv("ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
+    if host.strip()
 ]
 
 
@@ -87,10 +87,6 @@ WSGI_APPLICATION = "setup.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
 DB_ENGINE = os.getenv("DB_ENGINE", "django.db.backends.postgresql")
 
 if "sqlite" in DB_ENGINE:
@@ -100,7 +96,6 @@ if "sqlite" in DB_ENGINE:
             "NAME": BASE_DIR / os.getenv("DB_NAME", "db.sqlite3"),
         }
     }
-}
 else:
     DATABASES = {
         "default": {
