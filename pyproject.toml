@@ -1,0 +1,30 @@
+[project]
+name = "escola-api-gestao-matriculas"
+version = "0.1.0"
+description = "API REST para gestão de estudantes, cursos e matrículas escolares com Django e DRF"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "django>=5.0.3",
+    "djangorestframework>=3.15.0",
+    "markdown>=3.6",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-django>=4.8.0",
+    "ruff>=0.5.0",
+]
+
+[tool.uv]
+default-groups = ["dev"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "setup.settings"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
+
