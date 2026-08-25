@@ -11,7 +11,7 @@ class AutenticacaoTestCase(APITestCase):
         self.estudante = Estudante.objects.create(
             nome="Carlos Silva",
             email="carlos@test.com",
-            cpf="11122233344",
+            cpf="52998224725",
             data_nascimento="2000-01-15",
             celular="11988887777",
         )
@@ -36,7 +36,7 @@ class EstudantesTestCase(APITestCase):
         self.estudante_1 = Estudante.objects.create(
             nome="Ana Paula",
             email="ana@test.com",
-            cpf="12345678901",
+            cpf="01234567893",
             data_nascimento="2001-05-10",
             celular="11999990001",
         )
@@ -57,11 +57,11 @@ class EstudantesTestCase(APITestCase):
         self.assertEqual(response.data["count"], 2)
 
     def test_criar_estudante_sucesso(self):
-        """Verifica criação de um novo estudante via POST"""
+        """Verifica criação de um novo estudante com dados válidos"""
         dados = {
             "nome": "Carla Mendes",
             "email": "carla@test.com",
-            "cpf": "55566677788",
+            "cpf": "44455566619",
             "data_nascimento": "2002-03-12",
             "celular": "11987654321",
         }
@@ -104,6 +104,70 @@ class EstudantesTestCase(APITestCase):
         response = self.client.get("/estudantes/?ordering=-nome")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["results"][0]["nome"], "Bruno Lima")
+
+    def test_recusar_estudante_com_cpf_invalido(self):
+        """Verifica rejeição (400) ao tentar criar estudante com dígitos de CPF inválidos"""
+        dados = {
+            "nome": "Marcos Teste",
+            "email": "marcos@test.com",
+            "cpf": "12345678999",  # Dígitos verificadores incorretos
+            "data_nascimento": "2000-01-01",
+            "celular": "11999998888",
+        }
+        response = self.client.post("/estudantes/", dados, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("cpf", response.data)
+
+    def test_recusar_estudante_com_cpf_digitos_iguais(self):
+        """Verifica rejeição (400) para CPF com 11 dígitos repetidos (ex: 11111111111)"""
+        dados = {
+            "nome": "Jose Repetido",
+            "email": "jose@test.com",
+            "cpf": "11111111111",
+            "data_nascimento": "2000-01-01",
+            "celular": "11999998888",
+        }
+        response = self.client.post("/estudantes/", dados, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("cpf", response.data)
+
+    def test_recusar_estudante_com_nome_invalido(self):
+        """Verifica rejeição (400) ao tentar cadastrar nome com números"""
+        dados = {
+            "nome": "João 123 Silva",
+            "email": "joao@test.com",
+            "cpf": "44455566619",
+            "data_nascimento": "2000-01-01",
+            "celular": "11999998888",
+        }
+        response = self.client.post("/estudantes/", dados, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("nome", response.data)
+
+    def test_recusar_estudante_com_celular_invalido(self):
+        """Verifica rejeição (400) ao tentar cadastrar celular fora do padrão"""
+        dados = {
+            "nome": "Lucas Santos",
+            "email": "lucas.s@test.com",
+            "cpf": "44455566619",
+            "data_nascimento": "2000-01-01",
+            "celular": "12345",  # Menos dígitos do que o exigido
+        }
+        response = self.client.post("/estudantes/", dados, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("celular", response.data)
+
+    def test_recusar_estudante_com_cpf_duplicado(self):
+        """Verifica rejeição (400) ao tentar cadastrar CPF já existente no banco"""
+        dados = {
+            "nome": "Outro Estudante",
+            "email": "outro@test.com",
+            "cpf": "01234567893",  # Mesmo CPF de estudante_1
+            "data_nascimento": "1995-05-15",
+            "celular": "11999997777",
+        }
+        response = self.client.post("/estudantes/", dados, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
 class CursosTestCase(APITestCase):
@@ -165,6 +229,12 @@ class CursosTestCase(APITestCase):
         self.assertEqual(len(response.data["results"]), 1)
         self.assertEqual(response.data["results"][0]["codigo"], "DJ01")
 
+    def test_recusar_curso_codigo_duplicado(self):
+        """Verifica rejeição (400) ao tentar criar curso com código já existente"""
+        dados = {"codigo": "PY01", "descricao": "Outro Curso Python", "nivel": "A"}
+        response = self.client.post("/cursos/", dados, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
 
 class MatriculasTestCase(APITestCase):
     def setUp(self):
@@ -173,7 +243,7 @@ class MatriculasTestCase(APITestCase):
         self.estudante = Estudante.objects.create(
             nome="Lucas Rocha",
             email="lucas@test.com",
-            cpf="33344455566",
+            cpf="11144477735",
             data_nascimento="1998-07-22",
             celular="11966665555",
         )
@@ -195,6 +265,12 @@ class MatriculasTestCase(APITestCase):
         response = self.client.post("/matriculas/", dados, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Matricula.objects.count(), 2)
+
+    def test_recusar_matricula_duplicada(self):
+        """Verifica bloqueio (400) ao tentar matricular o mesmo estudante 2 vezes no mesmo curso"""
+        dados = {"estudante": self.estudante.id, "curso": self.curso.id, "periodo": "V"}
+        response = self.client.post("/matriculas/", dados, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_detalhar_matricula(self):
         """Verifica consulta de detalhes de matrícula via GET"""
@@ -237,7 +313,7 @@ class MatriculasRelacionadasTestCase(APITestCase):
         self.estudante = Estudante.objects.create(
             nome="Mariana Dias",
             email="mariana@test.com",
-            cpf="44455566677",
+            cpf="22233344405",
             data_nascimento="2003-11-05",
             celular="11944443333",
         )
@@ -253,7 +329,6 @@ class MatriculasRelacionadasTestCase(APITestCase):
         response = self.client.get(f"/estudantes/{self.estudante.id}/matriculas/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["count"], 2)
-        # Verifica se traz o nome do curso e o período por extenso
         cursos_nomes = [item["curso"] for item in response.data["results"]]
         self.assertIn("Java Completo", cursos_nomes)
         self.assertIn("SQL para Iniciantes", cursos_nomes)
