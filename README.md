@@ -204,6 +204,31 @@ curl -u usuario:senha http://127.0.0.1:8000/estudantes/1/matriculas/
 curl -u usuario:senha http://127.0.0.1:8000/cursos/1/matriculas/
 ```
 
+### Paginação, Busca, Filtros e Ordenação
+
+* **Paginação**: Por padrão, 10 itens por página. É possível navegar com `page` e customizar a quantidade com `page_size`:
+  ```bash
+  curl -u usuario:senha "http://127.0.0.1:8000/estudantes/?page=2"
+  curl -u usuario:senha "http://127.0.0.1:8000/estudantes/?page=1&page_size=20"
+  ```
+* **Busca textual (`search`)**:
+  ```bash
+  curl -u usuario:senha "http://127.0.0.1:8000/estudantes/?search=Maria"
+  curl -u usuario:senha "http://127.0.0.1:8000/cursos/?search=PYTHON"
+  curl -u usuario:senha "http://127.0.0.1:8000/matriculas/?search=Maria"
+  ```
+* **Filtros por atributos**:
+  ```bash
+  curl -u usuario:senha "http://127.0.0.1:8000/cursos/?nivel=B"
+  curl -u usuario:senha "http://127.0.0.1:8000/matriculas/?periodo=M"
+  ```
+* **Ordenação (`ordering`)**:
+  ```bash
+  curl -u usuario:senha "http://127.0.0.1:8000/estudantes/?ordering=nome"
+  curl -u usuario:senha "http://127.0.0.1:8000/estudantes/?ordering=-data_nascimento"
+  curl -u usuario:senha "http://127.0.0.1:8000/cursos/?ordering=-codigo"
+  ```
+
 ## Testes
 
 Com o ambiente virtual ativado, execute:
