@@ -9,11 +9,9 @@ O projeto usa SQLite por padrão, autenticação HTTP Basic e exige um usuário 
 ## Requisitos
 
 - Python 3.10 ou superior
-- `pip`
 - [uv](https://docs.astral.sh/uv/) (gerenciador de dependências ultra-rápido)
 - Git, caso o projeto ainda não esteja disponível localmente
 
-As versões das bibliotecas utilizadas estão fixadas em [requirements.txt](requirements.txt).
 As dependências do projeto estão centralizadas no arquivo [pyproject.toml](pyproject.toml).
 
 ## Estrutura principal
@@ -26,39 +24,24 @@ escola/                   # modelos, serializers, views e migrações
 db.sqlite3                # banco local, criado após a migração
 ```
 
-## Como executar localmente
 ## Como executar localmente com UV
 
-Execute os passos a seguir a partir da pasta raiz do projeto, isto é, a pasta que contém o arquivo `manage.py`.
 Execute os passos a seguir a partir da pasta raiz do projeto (onde está o arquivo `pyproject.toml`):
 
-### 1. Acesse o projeto
 ### 1. Inicializar o ambiente virtual e sincronizar dependências
 
-Se ainda não tiver o código, clone o repositório e entre na pasta:
 O `uv` gerencia o ambiente virtual automaticamente através do arquivo `pyproject.toml`:
 
 ```bash
-git clone <URL_DO_REPOSITORIO>
-cd escola-api-gestao-matriculas
 uv sync
 ```
 
-Se o projeto já estiver no computador:
 > Esse comando cria a pasta `.venv` e instala todas as dependências do projeto e de desenvolvimento (`pytest`, `ruff`) em milissegundos.
 
-```bash
-cd caminho/para/escola-api-gestao-matriculas
-```
 ### 2. Ativar o ambiente virtual (Opcional)
 
-Confirme que está no diretório correto:
 Se preferir trabalhar com o ambiente ativado diretamente no terminal:
 
-```bash
-ls manage.py       # Linux/macOS
-dir manage.py      # Windows PowerShell
-```
 * **Linux / macOS:**
   ```bash
   source .venv/bin/activate
@@ -72,113 +55,48 @@ dir manage.py      # Windows PowerShell
   .venv\Scripts\activate.bat
   ```
 
-### 2. Crie o ambiente virtual
 > **Nota:** Com o `uv`, ativar o ambiente é opcional. Você pode executar qualquer comando precedido por `uv run` (ex: `uv run python manage.py runserver`).
 
-```bash
-python -m venv venv
-```
 ### 3. Aplicar as migrações do banco de dados
 
-No Linux/macOS, se `python` não estiver disponível, use `python3`:
-
 ```bash
-python3 -m venv venv
 uv run python manage.py makemigrations
 uv run python manage.py migrate
 ```
 
-### 3. Ative o ambiente virtual
 ### 4. Criar um usuário administrador para acessar a API
 
-Linux/macOS:
 Como a API exige autenticação HTTP Basic, crie um superusuário:
 
 ```bash
-source venv/bin/activate
 uv run python manage.py createsuperuser
 ```
 
-Windows PowerShell:
 ### 5. Executar a suíte de testes
 
-```powershell
-venv\Scripts\Activate.ps1
-```
-
-Windows Prompt de Comando (cmd):
-
-```bat
-venv\Scripts\activate.bat
-```
-
-Quando a ativação funcionar, o nome `(venv)` aparecerá no início da linha do terminal.
-
-### 4. Instale as dependências
-
-Com o ambiente virtual ativado:
-
 ```bash
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-```
 # Executar testes nativos do Django/DRF
 uv run python manage.py test -v 2
 
-### 5. Verifique a configuração
-
-```bash
-python manage.py check
 # Ou executar com pytest
 uv run pytest
 ```
 
-O resultado esperado é `System check identified no issues`.
 ### 6. Iniciar o servidor de desenvolvimento
 
-### 6. Crie o banco de dados
-
-Aplique as migrações existentes:
-
 ```bash
-python manage.py migrate
 uv run python manage.py runserver
 ```
 
-Esse comando cria o arquivo `db.sqlite3` e as tabelas do Django, incluindo `Estudante`, `Curso` e `Matricula`. Não é necessário executar `makemigrations` na primeira execução, pois as migrações já estão versionadas no projeto.
 Por padrão, a aplicação estará disponível em:
 - **API:** http://127.0.0.1:8000/
 - **Painel Administrativo:** http://127.0.0.1:8000/admin/
 
-### 7. Crie um usuário para acessar a API
-
-Como a API exige autenticação, crie um usuário administrador:
-
-```bash
-python manage.py createsuperuser
-```
-
-Informe nome de usuário, e-mail e senha quando solicitado. Esse usuário poderá ser usado nas requisições com autenticação Basic e no painel administrativo.
-
-### 8. Inicie o servidor
-
-```bash
-python manage.py runserver
-```
-
-Por padrão, a aplicação ficará disponível em:
-
-- API: http://127.0.0.1:8000/
-- Administração: http://127.0.0.1:8000/admin/
-
 Para usar outra porta:
-
 ```bash
-python manage.py runserver 8080
 uv run python manage.py runserver 8080
 ```
 
-Para interromper o servidor, pressione `Ctrl+C`.
 
 ## Endpoints disponíveis
 
@@ -283,18 +201,13 @@ python manage.py test
 Depois de alterar modelos, gere uma nova migração e aplique-a:
 
 ```bash
-python manage.py makemigrations
-python manage.py migrate
 uv run python manage.py makemigrations
 uv run python manage.py migrate
 ```
 
-Antes de abrir uma alteração, verifique a configuração e execute os testes:
 Antes de abrir uma alteração, execute os testes e linters:
 
 ```bash
-python manage.py check
-python manage.py test
 uv run python manage.py test -v 2
 uv run ruff check .
 ```
@@ -303,16 +216,11 @@ uv run ruff check .
 
 ### `No module named 'django'`
 
-Ative o ambiente virtual e instale as dependências novamente:
 Sincronize as dependências com o uv novamente:
 
 ```bash
-source venv/bin/activate       # Linux/macOS
-python -m pip install -r requirements.txt
 uv sync
 ```
-
-No Windows, use `venv\Scripts\Activate.ps1` para ativar o ambiente.
 
 ### `401 Unauthorized`
 
@@ -323,7 +231,6 @@ A API exige autenticação. Confira se a requisição usa `-u usuario:senha` ou 
 As migrações ainda não foram aplicadas:
 
 ```bash
-python manage.py migrate
 uv run python manage.py migrate
 ```
 
