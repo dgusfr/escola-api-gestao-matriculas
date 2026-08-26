@@ -1,30 +1,69 @@
 from django.contrib.auth.models import User
 from rest_framework import status
 from rest_framework.test import APITestCase
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from escola.models import Curso, Estudante, Matricula
 
 
-class AutenticacaoTestCase(APITestCase):
+def gerar_token_para(user):
+    """Helper: gera e retorna o access token JWT de um usuário."""
+    refresh = RefreshToken.for_user(user)
+    return str(refresh.access_token)
+
+
+class AutenticacaoJWTTestCase(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="admin_test", password="secretpassword123")
-        self.estudante = Estudante.objects.create(
-            nome="Carlos Silva",
-            email="carlos@test.com",
-            cpf="52998224725",
-            data_nascimento="2000-01-15",
-            celular="11988887777",
-        )
+        self.token_url = "/api/token/"
+        self.refresh_url = "/api/token/refresh/"
 
-    def test_requisicao_sem_autenticacao_retorna_401(self):
-        """Verifica se requisição não autenticada é bloqueada com status 401"""
-        self.client.force_authenticate(user=None)
+    def test_obter_token_com_credenciais_validas(self):
+        """Verifica que POST /api/token/ com usuário e senha válidos retorna access e refresh token"""
+        response = self.client.post(
+            self.token_url,
+            {"username": "admin_test", "password": "secretpassword123"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("access", response.data)
+        self.assertIn("refresh", response.data)
+
+    def test_obter_token_com_credenciais_invalidas_retorna_401(self):
+        """Verifica que credenciais erradas retornam 401"""
+        response = self.client.post(
+            self.token_url,
+            {"username": "admin_test", "password": "senhaerrada"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_refresh_token_retorna_novo_access_token(self):
+        """Verifica que POST /api/token/refresh/ retorna um novo access token"""
+        refresh = RefreshToken.for_user(self.user)
+        response = self.client.post(
+            self.refresh_url,
+            {"refresh": str(refresh)},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("access", response.data)
+
+    def test_requisicao_sem_token_retorna_401(self):
+        """Verifica que requisições sem token são bloqueadas com 401"""
         response = self.client.get("/estudantes/")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    def test_requisicao_com_autenticacao_retorna_200(self):
-        """Verifica se requisição autenticada tem acesso permitido"""
-        self.client.force_authenticate(user=self.user)
+    def test_requisicao_com_token_invalido_retorna_401(self):
+        """Verifica que token malformado é rejeitado com 401"""
+        self.client.credentials(HTTP_AUTHORIZATION="Bearer token.invalido.aqui")
+        response = self.client.get("/estudantes/")
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_requisicao_com_token_valido_retorna_200(self):
+        """Verifica que access token JWT válido permite acesso à API"""
+        token = gerar_token_para(self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
         response = self.client.get("/estudantes/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -32,7 +71,8 @@ class AutenticacaoTestCase(APITestCase):
 class EstudantesTestCase(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="admin_test", password="secretpassword123")
-        self.client.force_authenticate(user=self.user)
+        token = gerar_token_para(self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
         self.estudante_1 = Estudante.objects.create(
             nome="Ana Paula",
             email="ana@test.com",
@@ -173,7 +213,8 @@ class EstudantesTestCase(APITestCase):
 class CursosTestCase(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="admin_test", password="secretpassword123")
-        self.client.force_authenticate(user=self.user)
+        token = gerar_token_para(self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
         self.curso_1 = Curso.objects.create(codigo="PY01", descricao="Python Básico", nivel="B")
         self.curso_2 = Curso.objects.create(
             codigo="DJ01", descricao="Django Intermediário", nivel="I"
@@ -239,7 +280,8 @@ class CursosTestCase(APITestCase):
 class MatriculasTestCase(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="admin_test", password="secretpassword123")
-        self.client.force_authenticate(user=self.user)
+        token = gerar_token_para(self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
         self.estudante = Estudante.objects.create(
             nome="Lucas Rocha",
             email="lucas@test.com",
@@ -309,7 +351,8 @@ class MatriculasTestCase(APITestCase):
 class MatriculasRelacionadasTestCase(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="admin_test", password="secretpassword123")
-        self.client.force_authenticate(user=self.user)
+        token = gerar_token_para(self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
         self.estudante = Estudante.objects.create(
             nome="Mariana Dias",
             email="mariana@test.com",
