@@ -17,7 +17,28 @@ services:
       timeout: 5s
       retries: 5
 
+  api:
+    build: .
+    container_name: escola_api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      # Sobrescreve as variáveis do .env para funcionar no ecossistema Docker
+      DB_HOST: postgres
+      DB_PORT: 5432
+      ALLOWED_HOSTS: "127.0.0.1,localhost,0.0.0.0"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      # Mapeia a pasta local para a do container para termos hot-reload!
+      - .:/app
+      # Mas protege a pasta .venv do container para não ser sobrescrita pelo seu .venv local (Linux)
+      - /app/.venv
+
 volumes:
   postgres_data:
     driver: local
-
