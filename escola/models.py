@@ -32,12 +32,19 @@ class Matricula(models.Model):
         ("V", "Vespertino"),
         ("N", "Noturno"),
     )
+    STATUS = (
+        ("A", "Ativa"),
+        ("T", "Trancada"),
+        ("C", "Cancelada"),
+        ("F", "Finalizada"),
+    )
     estudante = models.ForeignKey(Estudante, on_delete=models.CASCADE)
     curso = models.ForeignKey(Curso, on_delete=models.CASCADE)
     periodo = models.CharField(max_length=1, choices=PERIODO, blank=False, null=False, default="M")
+    status = models.CharField(max_length=1, choices=STATUS, blank=False, null=False, default="A")
 
     class Meta:
         unique_together = ("estudante", "curso")
 
     def __str__(self):
-        return f"{self.estudante.nome} - {self.curso.codigo} ({self.get_periodo_display()})"
+        return f"{self.estudante.nome} - {self.curso.codigo} ({self.get_periodo_display()}) - {self.get_status_display()}"

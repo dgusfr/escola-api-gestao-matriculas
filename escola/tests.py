@@ -347,6 +347,44 @@ class MatriculasTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data["results"]), 1)
 
+    def test_filtrar_matriculas_por_status(self):
+        """Verifica filtro por status (?status=A)"""
+        response = self.client.get("/matriculas/?status=A")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["results"]), 1)
+
+        response_inativo = self.client.get("/matriculas/?status=C")
+        self.assertEqual(len(response_inativo.data["results"]), 0)
+
+    def test_trancar_matricula_ativa_sucesso(self):
+        """Verifica se é possível trancar uma matrícula ativa via action PATCH"""
+        response = self.client.patch(f"/matriculas/{self.matricula.id}/trancar/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.matricula.refresh_from_db()
+        self.assertEqual(self.matricula.status, "T")
+
+    def test_cancelar_matricula_ativa_sucesso(self):
+        """Verifica se é possível cancelar uma matrícula ativa via action PATCH"""
+        response = self.client.patch(f"/matriculas/{self.matricula.id}/cancelar/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.matricula.refresh_from_db()
+        self.assertEqual(self.matricula.status, "C")
+
+    def test_finalizar_matricula_ativa_sucesso(self):
+        """Verifica se é possível finalizar uma matrícula ativa via action PATCH"""
+        response = self.client.patch(f"/matriculas/{self.matricula.id}/finalizar/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.matricula.refresh_from_db()
+        self.assertEqual(self.matricula.status, "F")
+
+    def test_trancar_matricula_inativa_retorna_400(self):
+        """Verifica que não é possível trancar uma matrícula que não está ativa"""
+        self.matricula.status = "C"
+        self.matricula.save()
+        response = self.client.patch(f"/matriculas/{self.matricula.id}/trancar/")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Apenas matrículas ativas", response.data["erro"])
+
 
 class MatriculasRelacionadasTestCase(APITestCase):
     def setUp(self):
