@@ -1,109 +1,91 @@
-**README.md**
-
 # API de Gestão de Matrículas
 
 API REST para gerenciamento de estudantes, cursos e matrículas, desenvolvida com Django 5 e Django REST Framework.
 
-O projeto usa SQLite por padrão, autenticação HTTP Basic e exige um usuário autenticado para acessar os endpoints da API.
+O projeto utiliza PostgreSQL (via Docker), autenticação via JWT (Bearer Token) e fornece documentação automatizada (Swagger/OpenAPI 3.0).
 
 ## Requisitos
 
 - Python 3.10 ou superior
 - [uv](https://docs.astral.sh/uv/) (gerenciador de dependências ultra-rápido)
+- Docker e Docker Compose (para o banco de dados)
 - Git, caso o projeto ainda não esteja disponível localmente
 
 As dependências do projeto estão centralizadas no arquivo [pyproject.toml](pyproject.toml).
 
-## Estrutura principal
-
-```text
-pyproject.toml            # dependências e configurações do projeto (UV / PEP 621)
-manage.py                 # comandos administrativos do Django
-setup/                    # configurações, URLs e servidores ASGI/WSGI
-escola/                   # modelos, serializers, views e migrações
-db.sqlite3                # banco local, criado após a migração
-```
-
 ## Como executar localmente com UV
 
-Execute os passos a seguir a partir da pasta raiz do projeto (onde está o arquivo `pyproject.toml`):
+Execute os passos a seguir a partir da pasta raiz do projeto:
 
 ### 1. Inicializar o ambiente virtual e sincronizar dependências
-
-O `uv` gerencia o ambiente virtual automaticamente através do arquivo `pyproject.toml`:
 
 ```bash
 uv sync
 ```
+> O `uv` gerencia o ambiente virtual automaticamente e instala as dependências em milissegundos.
 
-> Esse comando cria a pasta `.venv` e instala todas as dependências do projeto e de desenvolvimento (`pytest`, `ruff`) em milissegundos.
+### 2. Subir o banco de dados PostgreSQL
 
-### 2. Ativar o ambiente virtual (Opcional)
+Utilize o Docker Compose para iniciar o banco de dados:
 
-Se preferir trabalhar com o ambiente ativado diretamente no terminal:
-
-* **Linux / macOS:**
-  ```bash
-  source .venv/bin/activate
-  ```
-* **Windows (PowerShell):**
-  ```powershell
-  .venv\Scripts\Activate.ps1
-  ```
-* **Windows (Prompt de Comando - CMD):**
-  ```bat
-  .venv\Scripts\activate.bat
-  ```
-
-> **Nota:** Com o `uv`, ativar o ambiente é opcional. Você pode executar qualquer comando precedido por `uv run` (ex: `uv run python manage.py runserver`).
+```bash
+docker compose up -d
+```
 
 ### 3. Aplicar as migrações do banco de dados
 
-```bash
-uv run python manage.py makemigrations
-uv run python manage.py migrate
-```
-
-### 4. Criar um usuário administrador para acessar a API
-
-Como a API exige autenticação HTTP Basic, crie um superusuário:
+*Nota: Exporte a variável `DB_PORT=5433` no seu terminal antes de rodar os comandos do Django, para apontar para o container do Docker.*
 
 ```bash
-uv run python manage.py createsuperuser
+DB_PORT=5433 uv run python manage.py makemigrations
+DB_PORT=5433 uv run python manage.py migrate
 ```
 
-### 5. Executar a suíte de testes
+### 4. Criar um usuário administrador
+
+Crie um usuário para conseguir se autenticar na API:
 
 ```bash
-# Executar testes nativos do Django/DRF
-uv run python manage.py test -v 2
-
-# Ou executar com pytest
-uv run pytest
+DB_PORT=5433 uv run python manage.py createsuperuser
 ```
 
-### 6. Iniciar o servidor de desenvolvimento
+### 5. Iniciar o servidor de desenvolvimento
 
 ```bash
-uv run python manage.py runserver
+DB_PORT=5433 uv run python manage.py runserver
 ```
 
-Por padrão, a aplicação estará disponível em:
-- **API:** http://127.0.0.1:8000/
-- **Painel Administrativo:** http://127.0.0.1:8000/admin/
+Por padrão, a API estará disponível em: http://127.0.0.1:8000/
 
-Para usar outra porta:
-```bash
-uv run python manage.py runserver 8080
-```
+---
 
+## Documentação da API (Swagger / OpenAPI)
+
+Com o servidor rodando, você pode acessar a documentação interativa gerada automaticamente pelo `drf-spectacular`.
+
+Através da interface do Swagger, você pode testar todos os endpoints, ver os esquemas de dados e até mesmo se autenticar:
+
+- **Swagger UI (Recomendado para testar):** [http://127.0.0.1:8000/api/docs/](http://127.0.0.1:8000/api/docs/)
+- **ReDoc (Visualização elegante):** [http://127.0.0.1:8000/api/redoc/](http://127.0.0.1:8000/api/redoc/)
+- **Schema Bruto (YAML/JSON):** [http://127.0.0.1:8000/api/schema/](http://127.0.0.1:8000/api/schema/)
+
+**Como testar a API no Swagger:**
+1. Acesse o **Swagger UI**.
+2. Vá até o endpoint `POST /api/token/` e execute com seu `username` e `password`.
+3. Copie o valor de `access` gerado.
+4. Clique no botão verde **"Authorize"** (no topo da página) e cole o token.
+5. Pronto! Agora você pode testar todos os outros endpoints protegidos pela interface.
+
+---
 
 ## Endpoints disponíveis
 
-Todas as rotas abaixo aceitam autenticação HTTP Basic e são protegidas por `IsAuthenticated`.
+As rotas são protegidas e exigem um **JWT Bearer Token** válido no cabeçalho `Authorization`.
 
 | Método | Endpoint | Objetivo |
 | --- | --- | --- |
+| POST | `/api/token/` | Gerar tokens JWT de acesso e refresh |
+| POST | `/api/token/refresh/` | Renovar o token de acesso |
 | GET, POST | `/estudantes/` | Listar ou criar estudantes |
 | GET, PUT, PATCH, DELETE | `/estudantes/<id>/` | Consultar, alterar ou remover um estudante |
 | GET, POST | `/cursos/` | Listar ou criar cursos |
@@ -113,128 +95,41 @@ Todas as rotas abaixo aceitam autenticação HTTP Basic e são protegidas por `I
 | GET | `/estudantes/<id>/matriculas/` | Listar cursos de um estudante |
 | GET | `/cursos/<id>/matriculas/` | Listar estudantes de um curso |
 
-Os endpoints de coleção também disponibilizam a interface navegável do Django REST Framework no navegador.
 
-## Exemplos de uso
+## Autenticação via CLI (Curl)
 
-Com o servidor rodando e substituindo `usuario` e `senha` pelos dados criados:
-
-### Listar estudantes
+Se preferir testar via linha de comando, primeiro obtenha seu token:
 
 ```bash
-curl -u usuario:senha http://127.0.0.1:8000/estudantes/
+curl -X POST http://127.0.0.1:8000/api/token/ \
+  -H "Content-Type: application/json" \
+  -d '{"username": "seu_usuario", "password": "sua_senha"}'
 ```
 
-### Criar um estudante
+Copie o valor de `access` e envie no cabeçalho das próximas requisições:
 
 ```bash
-curl -u usuario:senha \
-    -H "Content-Type: application/json" \
-    -d '{"nome":"Maria Silva","email":"maria@example.com","cpf":"12345678901","data_nascimento":"2005-04-20","celular":"11999999999"}' \
-    http://127.0.0.1:8000/estudantes/
+curl -H "Authorization: Bearer <seu_token_access>" http://127.0.0.1:8000/estudantes/
 ```
-
-### Criar um curso
-
-`nivel` deve ser `B` (Básico), `I` (Intermediário) ou `A` (Avançado):
-
-```bash
-curl -u usuario:senha \
-    -H "Content-Type: application/json" \
-    -d '{"codigo":"PYTHON01","descricao":"Python para iniciantes","nivel":"B"}' \
-    http://127.0.0.1:8000/cursos/
-```
-
-### Criar uma matrícula
-
-Use os IDs existentes de estudante e curso. `periodo` pode ser `M` (Matutino), `V` (Vespertino) ou `N` (Noturno):
-
-```bash
-curl -u usuario:senha \
-    -H "Content-Type: application/json" \
-    -d '{"estudante":1,"curso":1,"periodo":"M"}' \
-    http://127.0.0.1:8000/matriculas/
-```
-
-### Consultar matrículas relacionadas
-
-```bash
-curl -u usuario:senha http://127.0.0.1:8000/estudantes/1/matriculas/
-curl -u usuario:senha http://127.0.0.1:8000/cursos/1/matriculas/
-```
-
-### Paginação, Busca, Filtros e Ordenação
-
-* **Paginação**: Por padrão, 10 itens por página. É possível navegar com `page` e customizar a quantidade com `page_size`:
-  ```bash
-  curl -u usuario:senha "http://127.0.0.1:8000/estudantes/?page=2"
-  curl -u usuario:senha "http://127.0.0.1:8000/estudantes/?page=1&page_size=20"
-  ```
-* **Busca textual (`search`)**:
-  ```bash
-  curl -u usuario:senha "http://127.0.0.1:8000/estudantes/?search=Maria"
-  curl -u usuario:senha "http://127.0.0.1:8000/cursos/?search=PYTHON"
-  curl -u usuario:senha "http://127.0.0.1:8000/matriculas/?search=Maria"
-  ```
-* **Filtros por atributos**:
-  ```bash
-  curl -u usuario:senha "http://127.0.0.1:8000/cursos/?nivel=B"
-  curl -u usuario:senha "http://127.0.0.1:8000/matriculas/?periodo=M"
-  ```
-* **Ordenação (`ordering`)**:
-  ```bash
-  curl -u usuario:senha "http://127.0.0.1:8000/estudantes/?ordering=nome"
-  curl -u usuario:senha "http://127.0.0.1:8000/estudantes/?ordering=-data_nascimento"
-  curl -u usuario:senha "http://127.0.0.1:8000/cursos/?ordering=-codigo"
-  ```
 
 ## Testes
 
-Com o ambiente virtual ativado, execute:
+Com o ambiente virtual ativado e o banco de dados rodando:
 
 ```bash
-python manage.py test
-```
-
-## Desenvolvimento
-
-Depois de alterar modelos, gere uma nova migração e aplique-a:
-
-```bash
-uv run python manage.py makemigrations
-uv run python manage.py migrate
-```
-
-Antes de abrir uma alteração, execute os testes e linters:
-
-```bash
-uv run python manage.py test -v 2
-uv run ruff check .
+DB_PORT=5433 uv run python manage.py test -v 2
 ```
 
 ## Solução de problemas
 
+### `401 Unauthorized`
+O token JWT pode estar expirado ou ausente. Gere um novo token em `/api/token/` ou use o refresh em `/api/token/refresh/`.
+
+### Erro de Conexão com o Banco / PostgreSQL
+Certifique-se de que o container do Docker está rodando (`docker compose ps`) e que a variável `DB_PORT=5433` foi passada antes do comando Django.
+
 ### `No module named 'django'`
-
-Sincronize as dependências com o uv novamente:
-
+Sincronize as dependências com o uv:
 ```bash
 uv sync
 ```
-
-### `401 Unauthorized`
-
-A API exige autenticação. Confira se a requisição usa `-u usuario:senha` ou informe as credenciais na interface navegável do DRF.
-
-### `no such table`
-
-As migrações ainda não foram aplicadas:
-
-```bash
-uv run python manage.py migrate
-```
-
-## Links
-
-- [Django REST Framework](https://www.django-rest-framework.org/)
-- [Documentação do Django](https://docs.djangoproject.com/)
