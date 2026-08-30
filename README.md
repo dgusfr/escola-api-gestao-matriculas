@@ -15,8 +15,6 @@
   <img src="https://img.shields.io/badge/CI-GitHub_Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white" alt="GitHub Actions"/>
 </p>
 
-# API de Gestão de Matrículas
-
 API REST para gerenciamento de estudantes, cursos e matrículas, desenvolvida com Django 5 e Django REST Framework.
 
 O projeto é **100% conteinerizado**, utilizando PostgreSQL e a API Django orquestrados via Docker Compose. Inclui autenticação via JWT (Bearer Token), documentação automatizada (Swagger/OpenAPI 3.0) e uma pipeline de CI com GitHub Actions que roda linter e testes automaticamente a cada push.
