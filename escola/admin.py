@@ -1,5 +1,7 @@
 from django.contrib import admin
-from escola.models import Estudante,Curso, Matricula
+
+from escola.models import Curso, Estudante, Matricula
+
 
 class Estudantes(admin.ModelAdmin):
     list_display = ('id','nome','email','cpf','data_nascimento','celular')

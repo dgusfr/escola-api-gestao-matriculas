@@ -28,6 +28,9 @@ default-groups = ["dev"]
 line-length = 100
 target-version = "py310"
 
+[tool.ruff.lint]
+ignore = ["RUF012"]
+
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "setup.settings"
 python_files = ["tests.py", "test_*.py", "*_tests.py"]

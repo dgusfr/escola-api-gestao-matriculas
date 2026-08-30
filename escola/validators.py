@@ -23,10 +23,7 @@ def cpf_valido(numero_cpf: str) -> bool:
     soma = sum(int(cpf[i]) * (11 - i) for i in range(10))
     resto = soma % 11
     digito_2 = 0 if resto < 2 else 11 - resto
-    if int(cpf[10]) != digito_2:
-        return False
-
-    return True
+    return int(cpf[10]) == digito_2
 
 
 def nome_valido(nome: str) -> bool:
