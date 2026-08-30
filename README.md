@@ -1,8 +1,25 @@
 # API de Gestão de Matrículas
 
+<p align="center">
+  <img src="escola_api_banner.jpg" alt="Escola API Banner" width="100%"/>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python"/>
+  <img src="https://img.shields.io/badge/Django-5.0-092E20?style=for-the-badge&logo=django&logoColor=white" alt="Django"/>
+  <img src="https://img.shields.io/badge/DRF-3.15-a30000?style=for-the-badge&logo=django&logoColor=white" alt="DRF"/>
+  <img src="https://img.shields.io/badge/PostgreSQL-16-316192?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL"/>
+  <img src="https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker"/>
+  <img src="https://img.shields.io/badge/JWT-Auth-black?style=for-the-badge&logo=jsonwebtokens&logoColor=white" alt="JWT"/>
+  <img src="https://img.shields.io/badge/uv-Package_Manager-DE5FE9?style=for-the-badge&logo=astral&logoColor=white" alt="uv"/>
+  <img src="https://img.shields.io/badge/CI-GitHub_Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white" alt="GitHub Actions"/>
+</p>
+
+# API de Gestão de Matrículas
+
 API REST para gerenciamento de estudantes, cursos e matrículas, desenvolvida com Django 5 e Django REST Framework.
 
-O projeto é **100% conteinerizado**, utilizando PostgreSQL e a API Django orquestrados via Docker Compose. Inclui também autenticação via JWT (Bearer Token) e documentação automatizada (Swagger/OpenAPI 3.0).
+O projeto é **100% conteinerizado**, utilizando PostgreSQL e a API Django orquestrados via Docker Compose. Inclui autenticação via JWT (Bearer Token), documentação automatizada (Swagger/OpenAPI 3.0) e uma pipeline de CI com GitHub Actions que roda linter e testes automaticamente a cada push.
 
 ## Requisitos
 
@@ -17,6 +34,7 @@ O projeto é **100% conteinerizado**, utilizando PostgreSQL e a API Django orque
 pyproject.toml            # dependências e configurações do projeto (UV / PEP 621)
 Dockerfile                # instrução de construção da imagem da API
 docker-compose.yml        # orquestração dos serviços (banco de dados e API)
+.github/workflows/ci.yml  # pipeline de CI com GitHub Actions
 manage.py                 # comandos administrativos do Django
 setup/                    # configurações, URLs e servidores ASGI/WSGI
 escola/                   # modelos, serializers, views e migrações
@@ -90,6 +108,9 @@ As rotas da API exigem um **JWT Bearer Token** válido no cabeçalho `Authorizat
 | GET, PUT, PATCH, DELETE | `/cursos/<id>/` | Consultar, alterar ou remover um curso |
 | GET, POST | `/matriculas/` | Listar ou criar matrículas |
 | GET, PUT, PATCH, DELETE | `/matriculas/<id>/` | Consultar, alterar ou remover uma matrícula |
+| PATCH | `/matriculas/<id>/trancar/` | Trancar uma matrícula ativa |
+| PATCH | `/matriculas/<id>/cancelar/` | Cancelar uma matrícula ativa ou trancada |
+| PATCH | `/matriculas/<id>/finalizar/` | Finalizar uma matrícula ativa (conclusão) |
 | GET | `/estudantes/<id>/matriculas/` | Listar cursos de um estudante |
 | GET | `/cursos/<id>/matriculas/` | Listar estudantes de um curso |
 
@@ -108,6 +129,23 @@ curl -X POST http://127.0.0.1:8000/api/token/ \
 # 2. Fazer requisição usando o Token retornado
 curl -H "Authorization: Bearer <seu_token_access>" http://127.0.0.1:8000/estudantes/
 ```
+
+---
+
+## Pipeline de CI (GitHub Actions)
+
+O projeto possui uma pipeline de Integração Contínua configurada em [`.github/workflows/ci.yml`](.github/workflows/ci.yml) que é disparada automaticamente a cada `push` ou `Pull Request` para a branch `main`.
+
+A pipeline realiza as seguintes etapas em sequência:
+
+1. 📥 **Clona o repositório**
+2. ⚡ **Instala o `uv`** (gerenciador de dependências)
+3. 📦 **`uv sync`** — instala todas as dependências
+4. 🔍 **`ruff check`** — valida o estilo e qualidade do código
+5. 🗄️ **`migrate`** — aplica as migrações em um banco PostgreSQL temporário
+6. ✅ **`manage.py test`** — roda todos os testes automatizados
+
+Se qualquer etapa falhar, o merge é bloqueado automaticamente no GitHub.
 
 ---
 
